@@ -1,31 +1,34 @@
-// ArkFinance data store using localStorage
+import { supabase } from "@/integrations/supabase/client";
 
 export type TransactionType = 'income' | 'expense';
 
 export interface Transaction {
   id: string;
+  user_id: string;
   amount: number;
-  type: TransactionType;
+  type: string;
   category: string;
   date: string;
   notes: string;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface Budget {
   id: string;
+  user_id: string;
   category: string;
-  limit: number;
-  startDate: string;
-  endDate: string;
+  limit_amount: number;
+  start_date: string;
+  end_date: string;
 }
 
 export interface Goal {
   id: string;
+  user_id: string;
   name: string;
-  targetAmount: number;
-  currentAmount: number;
-  targetDate: string;
+  target_amount: number;
+  current_amount: number;
+  target_date: string;
 }
 
 export interface Insight {
@@ -35,121 +38,130 @@ export interface Insight {
   createdAt: string;
 }
 
-const STORAGE_KEYS = {
-  transactions: 'ark_transactions',
-  budgets: 'ark_budgets',
-  goals: 'ark_goals',
-  insights: 'ark_insights',
-  currency: 'ark_currency',
-};
-
-function load<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function save<T>(key: string, data: T) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
+// Categories
+export const EXPENSE_CATEGORIES = ['Food & Dining', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Health', 'Education', 'Other'];
+export const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
 
 // Transactions
-export function getTransactions(): Transaction[] {
-  return load<Transaction[]>(STORAGE_KEYS.transactions, []);
+export async function getTransactions(): Promise<Transaction[]> {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .order('date', { ascending: false });
+  if (error) throw error;
+  return (data || []) as Transaction[];
 }
 
-export function addTransaction(t: Omit<Transaction, 'id' | 'createdAt'>): Transaction {
-  const transactions = getTransactions();
-  const newT: Transaction = { ...t, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
-  transactions.unshift(newT);
-  save(STORAGE_KEYS.transactions, transactions);
-  generateInsights();
-  return newT;
+export async function addTransaction(t: { amount: number; type: string; category: string; date: string; notes: string }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  
+  const { data, error } = await supabase.from('transactions').insert({
+    user_id: user.id,
+    amount: t.amount,
+    type: t.type,
+    category: t.category,
+    date: t.date,
+    notes: t.notes,
+  }).select().single();
+  if (error) throw error;
+  return data;
 }
 
-export function deleteTransaction(id: string) {
-  const transactions = getTransactions().filter(t => t.id !== id);
-  save(STORAGE_KEYS.transactions, transactions);
+export async function deleteTransaction(id: string) {
+  const { error } = await supabase.from('transactions').delete().eq('id', id);
+  if (error) throw error;
 }
 
 // Budgets
-export function getBudgets(): Budget[] {
-  return load<Budget[]>(STORAGE_KEYS.budgets, defaultBudgets());
+export async function getBudgets(): Promise<Budget[]> {
+  const { data, error } = await supabase.from('budgets').select('*');
+  if (error) throw error;
+  return (data || []) as Budget[];
 }
 
-export function setBudget(b: Budget) {
-  const budgets = getBudgets();
-  const idx = budgets.findIndex(x => x.id === b.id);
-  if (idx >= 0) budgets[idx] = b;
-  else budgets.push(b);
-  save(STORAGE_KEYS.budgets, budgets);
-}
+export async function upsertBudget(b: { category: string; limit_amount: number; start_date: string; end_date: string; id?: string }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
 
-function defaultBudgets(): Budget[] {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-  return [
-    { id: '1', category: 'Food & Dining', limit: 500, startDate: start, endDate: end },
-    { id: '2', category: 'Transport', limit: 250, startDate: start, endDate: end },
-    { id: '3', category: 'Utilities', limit: 150, startDate: start, endDate: end },
-    { id: '4', category: 'Entertainment', limit: 200, startDate: start, endDate: end },
-    { id: '5', category: 'Shopping', limit: 300, startDate: start, endDate: end },
-  ];
+  if (b.id) {
+    const { error } = await supabase.from('budgets').update({
+      category: b.category,
+      limit_amount: b.limit_amount,
+      start_date: b.start_date,
+      end_date: b.end_date,
+    }).eq('id', b.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('budgets').insert({
+      user_id: user.id,
+      category: b.category,
+      limit_amount: b.limit_amount,
+      start_date: b.start_date,
+      end_date: b.end_date,
+    });
+    if (error) throw error;
+  }
 }
 
 // Goals
-export function getGoals(): Goal[] {
-  return load<Goal[]>(STORAGE_KEYS.goals, []);
+export async function getGoals(): Promise<Goal[]> {
+  const { data, error } = await supabase.from('goals').select('*');
+  if (error) throw error;
+  return (data || []) as Goal[];
 }
 
-export function addGoal(g: Omit<Goal, 'id'>): Goal {
-  const goals = getGoals();
-  const newG: Goal = { ...g, id: crypto.randomUUID() };
-  goals.push(newG);
-  save(STORAGE_KEYS.goals, goals);
-  return newG;
+export async function addGoal(g: { name: string; target_amount: number; current_amount: number; target_date: string }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase.from('goals').insert({ user_id: user.id, ...g });
+  if (error) throw error;
 }
 
-export function updateGoal(g: Goal) {
-  const goals = getGoals();
-  const idx = goals.findIndex(x => x.id === g.id);
-  if (idx >= 0) { goals[idx] = g; save(STORAGE_KEYS.goals, goals); }
+export async function updateGoal(g: { id: string; current_amount: number }) {
+  const { error } = await supabase.from('goals').update({ current_amount: g.current_amount }).eq('id', g.id);
+  if (error) throw error;
 }
 
-// Insights
-export function getInsights(): Insight[] {
-  return load<Insight[]>(STORAGE_KEYS.insights, []);
+// Settings
+export async function getUserSettings() {
+  const { data, error } = await supabase.from('user_settings').select('*').maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
-function generateInsights() {
-  const transactions = getTransactions();
-  const budgets = getBudgets();
+export async function updateUserSettings(settings: { currency?: string; whatsapp_alerts?: boolean; email_alerts?: boolean }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase.from('user_settings').update(settings).eq('user_id', user.id);
+  if (error) throw error;
+}
+
+// AI Insights (computed client-side from transaction data)
+export function generateInsights(transactions: Transaction[], budgets: Budget[]): Insight[] {
   const insights: Insight[] = [];
   const now = new Date();
 
-  // Check budget usage
   const thisMonthExpenses = transactions.filter(
-    t => t.type === 'expense' && new Date(t.date).getMonth() === now.getMonth()
+    t => t.type === 'expense' && new Date(t.date).getMonth() === now.getMonth() && new Date(t.date).getFullYear() === now.getFullYear()
+  );
+  const thisMonthIncome = transactions.filter(
+    t => t.type === 'income' && new Date(t.date).getMonth() === now.getMonth() && new Date(t.date).getFullYear() === now.getFullYear()
   );
 
   for (const budget of budgets) {
-    const spent = thisMonthExpenses.filter(t => t.category === budget.category).reduce((s, t) => s + t.amount, 0);
-    const pct = (spent / budget.limit) * 100;
+    const spent = thisMonthExpenses.filter(t => t.category === budget.category).reduce((s, t) => s + Number(t.amount), 0);
+    const pct = (spent / Number(budget.limit_amount)) * 100;
     if (pct >= 90) {
-      insights.push({ id: crypto.randomUUID(), message: `⚠️ You've used ${pct.toFixed(0)}% of your ${budget.category} budget ($${spent.toFixed(2)}/$${budget.limit})`, level: 'warning', createdAt: now.toISOString() });
+      insights.push({ id: crypto.randomUUID(), message: `⚠️ You've used ${pct.toFixed(0)}% of your ${budget.category} budget ($${spent.toFixed(2)}/$${budget.limit_amount})`, level: 'warning', createdAt: now.toISOString() });
     } else if (pct >= 70) {
       insights.push({ id: crypto.randomUUID(), message: `📊 ${budget.category} spending is at ${pct.toFixed(0)}%. Consider slowing down.`, level: 'tip', createdAt: now.toISOString() });
     }
   }
 
-  // Total spending insight
-  const totalExpenses = thisMonthExpenses.reduce((s, t) => s + t.amount, 0);
-  const totalIncome = transactions.filter(t => t.type === 'income' && new Date(t.date).getMonth() === now.getMonth()).reduce((s, t) => s + t.amount, 0);
-  
+  const totalExpenses = thisMonthExpenses.reduce((s, t) => s + Number(t.amount), 0);
+  const totalIncome = thisMonthIncome.reduce((s, t) => s + Number(t.amount), 0);
+
   if (totalIncome > 0 && totalExpenses / totalIncome > 0.8) {
     insights.push({ id: crypto.randomUUID(), message: `🔴 You've spent ${((totalExpenses / totalIncome) * 100).toFixed(0)}% of your income this month. Try to save more!`, level: 'warning', createdAt: now.toISOString() });
   } else if (totalIncome > 0 && totalExpenses / totalIncome < 0.5) {
@@ -160,65 +172,45 @@ function generateInsights() {
     insights.push({ id: crypto.randomUUID(), message: '💡 Start tracking your expenses to get personalized AI insights!', level: 'tip', createdAt: now.toISOString() });
   }
 
-  save(STORAGE_KEYS.insights, insights);
+  return insights;
 }
-
-// Currency
-export function getCurrency(): string {
-  return localStorage.getItem(STORAGE_KEYS.currency) || 'USD';
-}
-
-export function setCurrency(c: string) {
-  localStorage.setItem(STORAGE_KEYS.currency, c);
-}
-
-// Categories
-export const EXPENSE_CATEGORIES = ['Food & Dining', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Health', 'Education', 'Other'];
-export const INCOME_CATEGORIES = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'];
 
 // Summary helpers
-export function getMonthSummary() {
-  const transactions = getTransactions();
+export function getMonthSummary(transactions: Transaction[]) {
   const now = new Date();
   const thisMonth = transactions.filter(t => {
     const d = new Date(t.date);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-
-  const income = thisMonth.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expenses = thisMonth.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const income = thisMonth.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+  const expenses = thisMonth.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
   return { income, expenses, balance: income - expenses };
 }
 
-export function getCategorySpending(): Record<string, number> {
-  const transactions = getTransactions();
+export function getCategorySpending(transactions: Transaction[]): Record<string, number> {
   const now = new Date();
   const result: Record<string, number> = {};
   transactions
-    .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === now.getMonth())
-    .forEach(t => { result[t.category] = (result[t.category] || 0) + t.amount; });
+    .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === now.getMonth() && new Date(t.date).getFullYear() === now.getFullYear())
+    .forEach(t => { result[t.category] = (result[t.category] || 0) + Number(t.amount); });
   return result;
 }
 
-export function getMonthlyTrends(): { month: string; income: number; expenses: number }[] {
-  const transactions = getTransactions();
+export function getMonthlyTrends(transactions: Transaction[]): { month: string; income: number; expenses: number }[] {
   const months: Record<string, { income: number; expenses: number }> = {};
-  
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
     const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
     months[key] = { income: 0, expenses: 0 };
   }
-
   transactions.forEach(t => {
     const d = new Date(t.date);
     const key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
     if (months[key]) {
-      if (t.type === 'income') months[key].income += t.amount;
-      else months[key].expenses += t.amount;
+      if (t.type === 'income') months[key].income += Number(t.amount);
+      else months[key].expenses += Number(t.amount);
     }
   });
-
   return Object.entries(months).map(([month, data]) => ({ month, ...data }));
 }
