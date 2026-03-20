@@ -14,7 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      budgets: {
+        Row: {
+          category: string
+          created_at: string
+          end_date: string
+          id: string
+          limit_amount: number
+          start_date: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          end_date: string
+          id?: string
+          limit_amount: number
+          start_date: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          limit_amount?: number
+          start_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          current_amount: number
+          id: string
+          name: string
+          target_amount: number
+          target_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          id?: string
+          name: string
+          target_amount: number
+          target_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          id?: string
+          name?: string
+          target_amount?: number
+          target_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          date: string
+          id?: string
+          notes?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          currency: string
+          email_alerts: boolean
+          id: string
+          updated_at: string
+          user_id: string
+          whatsapp_alerts: boolean
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          email_alerts?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+          whatsapp_alerts?: boolean
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          email_alerts?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_alerts?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
