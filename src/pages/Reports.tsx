@@ -1,32 +1,29 @@
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getCategorySpending, getMonthlyTrends, getTransactions, getCurrency } from "@/lib/store";
-import { useMemo } from "react";
+import { getCategorySpending, getMonthlyTrends, getTransactions, getUserSettings } from "@/lib/store";
+import { useQuery } from "@tanstack/react-query";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 
 const COLORS = ['#2a9d8f', '#e9c46a', '#e76f51', '#264653', '#f4a261', '#606c38', '#bc6c25'];
 
 export default function Reports() {
   const navigate = useNavigate();
-  const currency = getCurrency();
-  const sym = currency === 'USD' ? '$' : currency;
+  const { data: transactions = [] } = useQuery({ queryKey: ['transactions'], queryFn: getTransactions });
+  const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: getUserSettings });
 
-  const categoryData = useMemo(() => {
-    const spending = getCategorySpending();
-    return Object.entries(spending).map(([name, value]) => ({ name, value }));
-  }, []);
+  const currency = settings?.currency || 'USD';
+  const sym = currency === 'USD' ? '$' : currency + ' ';
 
-  const trendData = useMemo(() => getMonthlyTrends(), []);
-  const transactions = useMemo(() => getTransactions(), []);
+  const categoryData = Object.entries(getCategorySpending(transactions)).map(([name, value]) => ({ name, value }));
+  const trendData = getMonthlyTrends(transactions);
 
   const exportCSV = () => {
     const header = "Date,Type,Category,Amount,Notes\n";
-    const rows = transactions.map(t => `${t.date},${t.type},${t.category},${t.amount},"${t.notes}"`).join("\n");
+    const rows = transactions.map(t => `${t.date},${t.type},${t.category},${t.amount},"${t.notes || ''}"`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "arkfinance_report.csv"; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "arkfinance_report.csv"; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -34,13 +31,10 @@ export default function Reports() {
     <div className="px-4 pt-2 pb-24 max-w-lg mx-auto">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center">
-            <ArrowLeft className="w-4 h-4" />
-          </button>
+          <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center"><ArrowLeft className="w-4 h-4" /></button>
           <h1 className="text-lg font-heading font-bold">Reports</h1>
         </div>
 
-        {/* Pie Chart */}
         <div className="bg-card rounded-2xl p-4 border border-border mb-5" style={{ boxShadow: 'var(--shadow-card)' }}>
           <h2 className="text-sm font-heading font-semibold mb-3">Spending Categories</h2>
           {categoryData.length > 0 ? (
@@ -62,12 +56,9 @@ export default function Reports() {
                 ))}
               </div>
             </>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">No expense data yet</p>
-          )}
+          ) : <p className="text-sm text-muted-foreground text-center py-8">No expense data yet</p>}
         </div>
 
-        {/* Trend Chart */}
         <div className="bg-card rounded-2xl p-4 border border-border mb-5" style={{ boxShadow: 'var(--shadow-card)' }}>
           <h2 className="text-sm font-heading font-semibold mb-3">Monthly Trends</h2>
           <ResponsiveContainer width="100%" height={200}>
@@ -83,14 +74,10 @@ export default function Reports() {
           </ResponsiveContainer>
         </div>
 
-        {/* Export */}
         <div className="flex gap-3">
-          <button onClick={exportCSV} className="flex-1 py-3 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold">
-            Export CSV
-          </button>
+          <button onClick={exportCSV} className="flex-1 py-3 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold">Export CSV</button>
         </div>
 
-        {/* Transaction List */}
         <div className="mt-5">
           <h2 className="text-sm font-heading font-semibold mb-3">All Transactions</h2>
           {transactions.length === 0 ? (
@@ -104,7 +91,7 @@ export default function Reports() {
                     <p className="text-[10px] text-muted-foreground">{new Date(tx.date).toLocaleDateString()}{tx.notes ? ` · ${tx.notes}` : ''}</p>
                   </div>
                   <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
-                    {tx.type === 'income' ? '+' : '-'}{sym}{tx.amount.toFixed(2)}
+                    {tx.type === 'income' ? '+' : '-'}{sym}{Number(tx.amount).toFixed(2)}
                   </span>
                 </div>
               ))}
