@@ -9,6 +9,7 @@ import AddTransaction from "./pages/AddTransaction";
 import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
 import AppSettings from "./pages/AppSettings";
+import Goals from "./pages/Goals";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
