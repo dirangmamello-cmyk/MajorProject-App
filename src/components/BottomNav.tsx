@@ -7,6 +7,7 @@ const tabs = [
   { path: "/reports", icon: BarChart3, label: "Reports" },
   { path: "/add", icon: PlusCircle, label: "Add" },
   { path: "/goals", icon: Target, label: "Goals" },
+  { path: "/chat", icon: MessageCircle, label: "AI Chat" },
   { path: "/settings", icon: Settings, label: "Settings" },
 ];
 
