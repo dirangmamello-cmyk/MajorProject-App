@@ -1,4 +1,4 @@
-import { Home, PlusCircle, BarChart3, Lightbulb, Settings, Target } from "lucide-react";
+import { Home, PlusCircle, BarChart3, Settings, Target, MessageCircle } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
