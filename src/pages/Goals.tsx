@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, ChevronDown, Target, Loader2 } from "lucide-react";
+import { Plus, ChevronDown, Target, Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -62,6 +63,20 @@ export default function Goals() {
       setNewName("");
       setNewTarget("");
       toast({ title: "Goal created!" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // Delete goal
+  const deleteGoal = useMutation({
+    mutationFn: async (goalId: string) => {
+      const { error } = await supabase.from("goals").delete().eq("id", goalId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
+      queryClient.invalidateQueries({ queryKey: ["goal_contributions"] });
+      toast({ title: "Goal deleted" });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
@@ -157,7 +172,30 @@ export default function Goals() {
                     <Collapsible>
                       <Card>
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-base font-semibold">{goal.name}</CardTitle>
+                          <div className="flex items-start justify-between">
+                            <CardTitle className="text-base font-semibold">{goal.name}</CardTitle>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete goal?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete "{goal.name}" and all its contributions.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteGoal.mutate(goal.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                           <div className="flex justify-between text-sm text-muted-foreground mt-1">
                             <span>Saved: <span className="text-foreground font-medium">${saved.toFixed(2)}</span></span>
                             {target > 0 && <span>Target: ${target.toFixed(2)}</span>}
