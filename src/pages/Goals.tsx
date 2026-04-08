@@ -172,7 +172,30 @@ export default function Goals() {
                     <Collapsible>
                       <Card>
                         <CardHeader className="pb-2">
-                          <CardTitle className="text-base font-semibold">{goal.name}</CardTitle>
+                          <div className="flex items-start justify-between">
+                            <CardTitle className="text-base font-semibold">{goal.name}</CardTitle>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete goal?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete "{goal.name}" and all its contributions.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteGoal.mutate(goal.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                           <div className="flex justify-between text-sm text-muted-foreground mt-1">
                             <span>Saved: <span className="text-foreground font-medium">${saved.toFixed(2)}</span></span>
                             {target > 0 && <span>Target: ${target.toFixed(2)}</span>}
