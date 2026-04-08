@@ -120,7 +120,7 @@ export default function AIChatbot() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] max-w-lg mx-auto">
+    <div className="flex flex-col max-w-lg mx-auto" style={{ height: "calc(100dvh - 4rem)" }}>
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-4 pt-3 pb-2 border-b border-border bg-card">
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center">
