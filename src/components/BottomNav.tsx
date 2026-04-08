@@ -1,4 +1,4 @@
-import { Home, PlusCircle, BarChart3, Lightbulb, Settings } from "lucide-react";
+import { Home, PlusCircle, BarChart3, Lightbulb, Settings, Target } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -7,7 +7,7 @@ const tabs = [
   { path: "/reports", icon: BarChart3, label: "Reports" },
   { path: "/add", icon: PlusCircle, label: "Add" },
   { path: "/insights", icon: Lightbulb, label: "Insights" },
-  { path: "/settings", icon: Settings, label: "Settings" },
+  { path: "/goals", icon: Target, label: "Goals" },
 ];
 
 export default function BottomNav() {
