@@ -7,7 +7,7 @@ const tabs = [
   { path: "/reports", icon: BarChart3, label: "Reports" },
   { path: "/add", icon: PlusCircle, label: "Add" },
   { path: "/insights", icon: Lightbulb, label: "Insights" },
-  { path: "/settings", icon: Settings, label: "Settings" },
+  { path: "/goals", icon: Target, label: "Goals" },
 ];
 
 export default function BottomNav() {

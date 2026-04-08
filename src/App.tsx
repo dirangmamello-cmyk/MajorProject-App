@@ -41,6 +41,7 @@ function AppRoutes() {
         <Route path="/add" element={<ProtectedRoute><AddTransaction /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
+        <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><AppSettings /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
