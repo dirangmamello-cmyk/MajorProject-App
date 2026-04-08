@@ -10,6 +10,7 @@ import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
 import AppSettings from "./pages/AppSettings";
 import Goals from "./pages/Goals";
+import AIChatbot from "./pages/AIChatbot";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import BottomNav from "./components/BottomNav";
@@ -42,6 +43,7 @@ function AppRoutes() {
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
         <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+        <Route path="/chat" element={<ProtectedRoute><AIChatbot /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><AppSettings /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
