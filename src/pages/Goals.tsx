@@ -67,6 +67,20 @@ export default function Goals() {
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  // Delete goal
+  const deleteGoal = useMutation({
+    mutationFn: async (goalId: string) => {
+      const { error } = await supabase.from("goals").delete().eq("id", goalId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals"] });
+      queryClient.invalidateQueries({ queryKey: ["goal_contributions"] });
+      toast({ title: "Goal deleted" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   // Add contribution
   const addContribution = useMutation({
     mutationFn: async ({ goalId, amount }: { goalId: string; amount: number }) => {
