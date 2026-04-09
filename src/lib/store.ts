@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { enqueue } from "@/lib/syncQueue";
 
 export type TransactionType = 'income' | 'expense';
 
