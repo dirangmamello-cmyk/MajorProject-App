@@ -23,7 +23,7 @@ export function useOfflineSync() {
       setSummary(getQueueSummary());
       setIsSyncing(getIsSyncing());
     });
-    return unsubscribe;
+    return () => { unsubscribe(); };
   }, []);
 
   const triggerSync = useCallback(async () => {
