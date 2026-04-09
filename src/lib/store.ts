@@ -56,16 +56,28 @@ export async function getTransactions(): Promise<Transaction[]> {
 export async function addTransaction(t: { amount: number; type: string; category: string; date: string; notes: string }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
-  
-  const { data, error } = await supabase.from('transactions').insert({
+
+  const payload = {
+    id: crypto.randomUUID(),
     user_id: user.id,
     amount: t.amount,
     type: t.type,
     category: t.category,
     date: t.date,
     notes: t.notes,
-  }).select().single();
-  if (error) throw error;
+  };
+
+  if (!navigator.onLine) {
+    enqueue({ table: 'transactions', operation: 'insert', payload });
+    return payload;
+  }
+
+  const { data, error } = await supabase.from('transactions').insert(payload).select().single();
+  if (error) {
+    // Queue for later if network fails
+    enqueue({ table: 'transactions', operation: 'insert', payload });
+    return payload;
+  }
   return data;
 }
 
