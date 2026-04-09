@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { enqueue } from "@/lib/syncQueue";
 
 export type TransactionType = 'income' | 'expense';
 
@@ -55,22 +56,40 @@ export async function getTransactions(): Promise<Transaction[]> {
 export async function addTransaction(t: { amount: number; type: string; category: string; date: string; notes: string }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
-  
-  const { data, error } = await supabase.from('transactions').insert({
+
+  const payload = {
+    id: crypto.randomUUID(),
     user_id: user.id,
     amount: t.amount,
     type: t.type,
     category: t.category,
     date: t.date,
     notes: t.notes,
-  }).select().single();
-  if (error) throw error;
+  };
+
+  if (!navigator.onLine) {
+    enqueue({ table: 'transactions', operation: 'insert', payload });
+    return payload;
+  }
+
+  const { data, error } = await supabase.from('transactions').insert(payload).select().single();
+  if (error) {
+    // Queue for later if network fails
+    enqueue({ table: 'transactions', operation: 'insert', payload });
+    return payload;
+  }
   return data;
 }
 
 export async function deleteTransaction(id: string) {
+  if (!navigator.onLine) {
+    enqueue({ table: 'transactions', operation: 'delete', payload: { id } });
+    return;
+  }
   const { error } = await supabase.from('transactions').delete().eq('id', id);
-  if (error) throw error;
+  if (error) {
+    enqueue({ table: 'transactions', operation: 'delete', payload: { id } });
+  }
 }
 
 // Budgets
@@ -114,8 +133,13 @@ export async function getGoals(): Promise<Goal[]> {
 export async function addGoal(g: { name: string; target_amount: number; current_amount: number; target_date: string }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
-  const { error } = await supabase.from('goals').insert({ user_id: user.id, ...g });
-  if (error) throw error;
+  const payload = { id: crypto.randomUUID(), user_id: user.id, ...g };
+  if (!navigator.onLine) {
+    enqueue({ table: 'goals', operation: 'insert', payload });
+    return;
+  }
+  const { error } = await supabase.from('goals').insert(payload);
+  if (error) enqueue({ table: 'goals', operation: 'insert', payload });
 }
 
 export async function updateGoal(g: { id: string; current_amount: number }) {
