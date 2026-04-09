@@ -133,8 +133,13 @@ export async function getGoals(): Promise<Goal[]> {
 export async function addGoal(g: { name: string; target_amount: number; current_amount: number; target_date: string }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
-  const { error } = await supabase.from('goals').insert({ user_id: user.id, ...g });
-  if (error) throw error;
+  const payload = { id: crypto.randomUUID(), user_id: user.id, ...g };
+  if (!navigator.onLine) {
+    enqueue({ table: 'goals', operation: 'insert', payload });
+    return;
+  }
+  const { error } = await supabase.from('goals').insert(payload);
+  if (error) enqueue({ table: 'goals', operation: 'insert', payload });
 }
 
 export async function updateGoal(g: { id: string; current_amount: number }) {
