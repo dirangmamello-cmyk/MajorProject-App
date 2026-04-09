@@ -82,8 +82,14 @@ export async function addTransaction(t: { amount: number; type: string; category
 }
 
 export async function deleteTransaction(id: string) {
+  if (!navigator.onLine) {
+    enqueue({ table: 'transactions', operation: 'delete', payload: { id } });
+    return;
+  }
   const { error } = await supabase.from('transactions').delete().eq('id', id);
-  if (error) throw error;
+  if (error) {
+    enqueue({ table: 'transactions', operation: 'delete', payload: { id } });
+  }
 }
 
 // Budgets
