@@ -198,7 +198,56 @@ export default function AppSettings() {
           )}
         </div>
 
-        {/* Alerts & Notifications */}
+        {/* ─── Budget Categories ─── */}
+        <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <PiggyBank className="w-4 h-4 text-secondary" />
+              <h2 className="text-sm font-heading font-semibold">Budget Categories</h2>
+            </div>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowAddBudget(!showAddBudget)}>
+              <Plus className="w-3 h-3 mr-1" />{showAddBudget ? 'Cancel' : 'Add'}
+            </Button>
+          </div>
+
+          {showAddBudget && (
+            <div className="space-y-2 mb-4 p-3 bg-muted rounded-xl">
+              <Select value={newBudgetCategory} onValueChange={setNewBudgetCategory}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent>
+                  {EXPENSE_CATEGORIES.filter(c => !budgets.some(b => b.category === c)).map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input type="number" placeholder="Monthly limit amount" value={newBudgetLimit} onChange={e => setNewBudgetLimit(e.target.value)} className="bg-background" />
+              <Button onClick={() => addBudgetMutation.mutate()} disabled={addBudgetMutation.isPending || !newBudgetCategory || !newBudgetLimit} className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                {addBudgetMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Save Budget
+              </Button>
+            </div>
+          )}
+
+          {budgets.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-3">No budgets yet. Tap "Add" to create one.</p>
+          ) : (
+            <div className="space-y-2">
+              {budgets.map(b => (
+                <div key={b.id} className="flex items-center justify-between bg-muted rounded-xl p-3">
+                  <div>
+                    <p className="text-sm font-medium">{b.category}</p>
+                    <p className="text-[10px] text-muted-foreground">Limit: ${Number(b.limit_amount).toFixed(2)}</p>
+                  </div>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteBudgetMutation.mutate(b.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+
         <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-2 mb-4"><Bell className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">Alerts & Notifications</h2></div>
           <div className="space-y-4">
