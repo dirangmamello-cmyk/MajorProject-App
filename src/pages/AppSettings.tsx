@@ -47,7 +47,40 @@ export default function AppSettings() {
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: getUserSettings });
   const { isOnline, isSyncing, summary, triggerSync, wifiOnly, toggleWifiOnly } = useOfflineSync();
   const [showQueue, setShowQueue] = useState(false);
+  const { data: budgets = [] } = useQuery({ queryKey: ['budgets'], queryFn: getBudgets });
+  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [newBudgetCategory, setNewBudgetCategory] = useState('');
+  const [newBudgetLimit, setNewBudgetLimit] = useState('');
 
+  const addBudgetMutation = useMutation({
+    mutationFn: async () => {
+      if (!newBudgetCategory || !newBudgetLimit) throw new Error("Fill all fields");
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      await upsertBudget({ category: newBudgetCategory, limit_amount: parseFloat(newBudgetLimit), start_date: startDate, end_date: endDate });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      setNewBudgetCategory('');
+      setNewBudgetLimit('');
+      setShowAddBudget(false);
+      toast.success("Budget added!");
+    },
+    onError: () => toast.error("Failed to add budget"),
+  });
+
+  const deleteBudgetMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('budgets').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      toast.success("Budget removed");
+    },
+    onError: () => toast.error("Failed to delete budget"),
+  });
   const handleCurrency = async (val: string) => {
     try {
       await updateUserSettings({ currency: val });
