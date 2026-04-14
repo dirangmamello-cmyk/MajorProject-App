@@ -1,17 +1,19 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Bell, Globe, Shield, LogOut, RefreshCw, Wifi, WifiOff, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, Bell, Globe, Shield, LogOut, RefreshCw, Wifi, WifiOff, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, Clock, PiggyBank, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getUserSettings, updateUserSettings } from "@/lib/store";
+import { getUserSettings, updateUserSettings, getBudgets, upsertBudget, EXPENSE_CATEGORIES } from "@/lib/store";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getQueue, type SyncStatus } from "@/lib/syncQueue";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 function SyncStatusIcon({ status }: { status: SyncStatus }) {
   switch (status) {
