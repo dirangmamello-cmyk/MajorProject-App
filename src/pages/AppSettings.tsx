@@ -1,17 +1,19 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Bell, Globe, Shield, LogOut, RefreshCw, Wifi, WifiOff, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, Bell, Globe, Shield, LogOut, RefreshCw, Wifi, WifiOff, Cloud, CloudOff, Loader2, CheckCircle2, AlertCircle, Clock, PiggyBank, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getUserSettings, updateUserSettings } from "@/lib/store";
+import { getUserSettings, updateUserSettings, getBudgets, upsertBudget, EXPENSE_CATEGORIES } from "@/lib/store";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getQueue, type SyncStatus } from "@/lib/syncQueue";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 function SyncStatusIcon({ status }: { status: SyncStatus }) {
   switch (status) {
@@ -45,7 +47,40 @@ export default function AppSettings() {
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: getUserSettings });
   const { isOnline, isSyncing, summary, triggerSync, wifiOnly, toggleWifiOnly } = useOfflineSync();
   const [showQueue, setShowQueue] = useState(false);
+  const { data: budgets = [] } = useQuery({ queryKey: ['budgets'], queryFn: getBudgets });
+  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [newBudgetCategory, setNewBudgetCategory] = useState('');
+  const [newBudgetLimit, setNewBudgetLimit] = useState('');
 
+  const addBudgetMutation = useMutation({
+    mutationFn: async () => {
+      if (!newBudgetCategory || !newBudgetLimit) throw new Error("Fill all fields");
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      await upsertBudget({ category: newBudgetCategory, limit_amount: parseFloat(newBudgetLimit), start_date: startDate, end_date: endDate });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      setNewBudgetCategory('');
+      setNewBudgetLimit('');
+      setShowAddBudget(false);
+      toast.success("Budget added!");
+    },
+    onError: () => toast.error("Failed to add budget"),
+  });
+
+  const deleteBudgetMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('budgets').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      toast.success("Budget removed");
+    },
+    onError: () => toast.error("Failed to delete budget"),
+  });
   const handleCurrency = async (val: string) => {
     try {
       await updateUserSettings({ currency: val });
@@ -163,7 +198,56 @@ export default function AppSettings() {
           )}
         </div>
 
-        {/* Alerts & Notifications */}
+        {/* ─── Budget Categories ─── */}
+        <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <PiggyBank className="w-4 h-4 text-secondary" />
+              <h2 className="text-sm font-heading font-semibold">Budget Categories</h2>
+            </div>
+            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowAddBudget(!showAddBudget)}>
+              <Plus className="w-3 h-3 mr-1" />{showAddBudget ? 'Cancel' : 'Add'}
+            </Button>
+          </div>
+
+          {showAddBudget && (
+            <div className="space-y-2 mb-4 p-3 bg-muted rounded-xl">
+              <Select value={newBudgetCategory} onValueChange={setNewBudgetCategory}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent>
+                  {EXPENSE_CATEGORIES.filter(c => !budgets.some(b => b.category === c)).map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input type="number" placeholder="Monthly limit amount" value={newBudgetLimit} onChange={e => setNewBudgetLimit(e.target.value)} className="bg-background" />
+              <Button onClick={() => addBudgetMutation.mutate()} disabled={addBudgetMutation.isPending || !newBudgetCategory || !newBudgetLimit} className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                {addBudgetMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Save Budget
+              </Button>
+            </div>
+          )}
+
+          {budgets.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-3">No budgets yet. Tap "Add" to create one.</p>
+          ) : (
+            <div className="space-y-2">
+              {budgets.map(b => (
+                <div key={b.id} className="flex items-center justify-between bg-muted rounded-xl p-3">
+                  <div>
+                    <p className="text-sm font-medium">{b.category}</p>
+                    <p className="text-[10px] text-muted-foreground">Limit: ${Number(b.limit_amount).toFixed(2)}</p>
+                  </div>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteBudgetMutation.mutate(b.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+
         <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-2 mb-4"><Bell className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">Alerts & Notifications</h2></div>
           <div className="space-y-4">
