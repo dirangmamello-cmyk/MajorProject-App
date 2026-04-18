@@ -13,12 +13,13 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: transactions = [] } = useQuery({ queryKey: ['transactions'], queryFn: getTransactions });
-  const { data: budgets = [] } = useQuery({ queryKey: ['budgets'], queryFn: getBudgets });
+  const { data: transactions = [] } = useQuery({ queryKey: ['transactions'], queryFn: getTransactions, refetchOnMount: 'always', refetchOnWindowFocus: true });
+  const { data: budgets = [] } = useQuery({ queryKey: ['budgets'], queryFn: getBudgets, refetchOnMount: 'always' });
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: getUserSettings });
 
   const currency = settings?.currency || 'USD';
-  const sym = currency === 'USD' ? '$' : currency + ' ';
+  const currencySymbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', ZAR: 'R', NGN: '₦', KES: 'KSh ', BWP: 'P' };
+  const sym = currencySymbols[currency] || currency + ' ';
   const summary = getMonthSummary(transactions);
   const spending = getCategorySpending(transactions);
   const recentTx = transactions.slice(0, 5);
