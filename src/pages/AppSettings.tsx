@@ -274,6 +274,7 @@ export default function AppSettings() {
               <SelectItem value="ZAR">ZAR - South African Rand</SelectItem>
               <SelectItem value="NGN">NGN - Nigerian Naira</SelectItem>
               <SelectItem value="KES">KES - Kenyan Shilling</SelectItem>
+              <SelectItem value="BWP">BWP - Botswana Pula</SelectItem>
             </SelectContent>
           </Select>
         </div>
