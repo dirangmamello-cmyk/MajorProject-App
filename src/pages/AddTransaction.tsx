@@ -15,19 +15,28 @@ export default function AddTransaction() {
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   const categories = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const isOther = category === "Other";
 
   const handleSubmit = async () => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) { toast.error("Enter a valid amount"); return; }
     if (!category) { toast.error("Select a category"); return; }
+    let finalCategory = category;
+    if (category === "Other") {
+      const trimmed = customCategory.trim();
+      if (!trimmed) { toast.error("Please type your custom category"); return; }
+      if (trimmed.length > 50) { toast.error("Category must be 50 characters or less"); return; }
+      finalCategory = trimmed;
+    }
     setLoading(true);
     try {
-      await addTransaction({ amount: amt, type, category, date, notes });
+      await addTransaction({ amount: amt, type, category: finalCategory, date, notes });
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
       toast.success("Transaction added!");
       navigate("/");
@@ -67,12 +76,22 @@ export default function AddTransaction() {
           <label className="text-sm text-muted-foreground mb-2 block">Category</label>
           <div className="flex flex-wrap gap-2">
             {categories.map(c => (
-              <button key={c} onClick={() => setCategory(c)}
+              <button key={c} onClick={() => { setCategory(c); if (c !== "Other") setCustomCategory(""); }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${category === c ? "bg-secondary text-secondary-foreground border-secondary" : "bg-card border-border text-muted-foreground hover:border-secondary"}`}>
                 {c}
               </button>
             ))}
           </div>
+          {isOther && (
+            <Input
+              autoFocus
+              placeholder="Type your custom category"
+              value={customCategory}
+              onChange={e => setCustomCategory(e.target.value)}
+              maxLength={50}
+              className="bg-card mt-3"
+            />
+          )}
         </div>
 
         <div className="mb-5">
