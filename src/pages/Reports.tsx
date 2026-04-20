@@ -9,22 +9,12 @@ const COLORS = ['#2a9d8f', '#e9c46a', '#e76f51', '#264653', '#f4a261', '#606c38'
 
 export default function Reports() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { data: transactions = [] } = useQuery({ queryKey: ['transactions'], queryFn: getTransactions, refetchOnMount: 'always' });
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: getUserSettings });
 
   const currency = settings?.currency || 'USD';
   const currencySymbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', ZAR: 'R', NGN: '₦', KES: 'KSh ', BWP: 'P' };
   const sym = currencySymbols[currency] || currency + ' ';
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteTransaction(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast.success("Transaction deleted");
-    },
-    onError: () => toast.error("Failed to delete transaction"),
-  });
 
   const categoryData = Object.entries(getCategorySpending(transactions)).map(([name, value]) => ({ name, value }));
   const trendData = getMonthlyTrends(transactions);
