@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowRight, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getMonthSummary, getBudgets, getCategorySpending, getTransactions, getUserSettings } from "@/lib/store";
+import { getMonthSummary, getBudgets, getCategorySpending, getTransactions, getUserSettings, deleteTransaction } from "@/lib/store";
 import { Progress } from "@/components/ui/progress";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
@@ -12,8 +14,18 @@ const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: transactions = [] } = useQuery({ queryKey: ['transactions'], queryFn: getTransactions, refetchOnMount: 'always', refetchOnWindowFocus: true });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteTransaction(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast.success("Transaction deleted");
+    },
+    onError: () => toast.error("Failed to delete transaction"),
+  });
   const { data: budgets = [] } = useQuery({ queryKey: ['budgets'], queryFn: getBudgets, refetchOnMount: 'always' });
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: getUserSettings });
 
@@ -105,18 +117,39 @@ export default function Dashboard() {
             <div className="space-y-2">
               {recentTx.map(tx => (
                 <div key={tx.id} className="flex items-center justify-between bg-card rounded-xl p-3 border border-border" style={{ boxShadow: 'var(--shadow-card)' }}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm ${tx.type === 'income' ? 'bg-success/10' : 'bg-destructive/10'}`}>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0 ${tx.type === 'income' ? 'bg-success/10' : 'bg-destructive/10'}`}>
                       {tx.type === 'income' ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-destructive" />}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{tx.category}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{tx.category}</p>
                       <p className="text-[10px] text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
-                    {tx.type === 'income' ? '+' : '-'}{sym}{Number(tx.amount).toFixed(2)}
-                  </span>
+                  <div className="flex items-center gap-2 ml-2 shrink-0">
+                    <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
+                      {tx.type === 'income' ? '+' : '-'}{sym}{Number(tx.amount).toFixed(2)}
+                    </span>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="w-7 h-7 rounded-full hover:bg-destructive/10 flex items-center justify-center text-destructive transition-colors" aria-label="Delete transaction">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will reverse "{tx.category}" ({tx.type === 'income' ? '+' : '-'}{sym}{Number(tx.amount).toFixed(2)}). This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMutation.mutate(tx.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))}
             </div>

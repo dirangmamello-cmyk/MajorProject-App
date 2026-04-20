@@ -1,11 +1,9 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getCategorySpending, getMonthlyTrends, getTransactions, getUserSettings, deleteTransaction } from "@/lib/store";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { getCategorySpending, getMonthlyTrends, getTransactions, getUserSettings } from "@/lib/store";
+import { useQuery } from "@tanstack/react-query";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
 
 const COLORS = ['#2a9d8f', '#e9c46a', '#e76f51', '#264653', '#f4a261', '#606c38', '#bc6c25'];
 
@@ -89,48 +87,6 @@ export default function Reports() {
 
         <div className="flex gap-3">
           <button onClick={exportCSV} className="flex-1 py-3 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold">Export CSV</button>
-        </div>
-
-        <div className="mt-5">
-          <h2 className="text-sm font-heading font-semibold mb-3">All Transactions</h2>
-          {transactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No transactions yet</p>
-          ) : (
-            <div className="space-y-2">
-              {transactions.map(tx => (
-                <div key={tx.id} className="flex items-center justify-between bg-card rounded-xl p-3 border border-border">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{tx.category}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{new Date(tx.date).toLocaleDateString()}{tx.notes ? ` · ${tx.notes}` : ''}</p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <span className={`text-sm font-semibold ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
-                      {tx.type === 'income' ? '+' : '-'}{sym}{Number(tx.amount).toFixed(2)}
-                    </span>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button className="w-7 h-7 rounded-full hover:bg-destructive/10 flex items-center justify-center text-destructive transition-colors" aria-label="Delete transaction">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will reverse "{tx.category}" ({tx.type === 'income' ? '+' : '-'}{sym}{Number(tx.amount).toFixed(2)}). This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteMutation.mutate(tx.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </motion.div>
     </div>
