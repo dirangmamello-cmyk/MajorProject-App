@@ -51,6 +51,13 @@ export default function AppSettings() {
   const [showAddBudget, setShowAddBudget] = useState(false);
   const [newBudgetCategory, setNewBudgetCategory] = useState('');
   const [newBudgetLimit, setNewBudgetLimit] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [whatsappDirty, setWhatsappDirty] = useState(false);
+
+  // Hydrate WhatsApp number from settings on first load
+  if (!whatsappDirty && settings && (settings as any).whatsapp_number && whatsappNumber === '') {
+    setWhatsappNumber((settings as any).whatsapp_number);
+  }
 
   const addBudgetMutation = useMutation({
     mutationFn: async () => {
@@ -94,6 +101,20 @@ export default function AppSettings() {
       await updateUserSettings({ whatsapp_alerts: val });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
     } catch { toast.error("Failed to update setting"); }
+  };
+
+  const saveWhatsappNumber = async () => {
+    const trimmed = whatsappNumber.trim();
+    if (trimmed && !/^\+?[0-9\s-]{7,20}$/.test(trimmed)) {
+      toast.error("Enter a valid phone number (e.g. +267 71 234 567)");
+      return;
+    }
+    try {
+      await updateUserSettings({ whatsapp_number: trimmed || null } as any);
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      setWhatsappDirty(false);
+      toast.success(trimmed ? "WhatsApp number saved" : "WhatsApp number removed");
+    } catch { toast.error("Failed to save WhatsApp number"); }
   };
 
   const handleEmail = async (val: boolean) => {
@@ -254,6 +275,24 @@ export default function AppSettings() {
             <div className="flex items-center justify-between">
               <div><p className="text-sm font-medium">WhatsApp Alerts</p><p className="text-[10px] text-muted-foreground">Receive transaction updates</p></div>
               <Switch checked={settings?.whatsapp_alerts ?? true} onCheckedChange={handleWhatsapp} />
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1">WhatsApp Number</label>
+              <p className="text-[10px] text-muted-foreground mb-2">Link your WhatsApp number to receive alerts (include country code)</p>
+              <div className="flex gap-2">
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="+267 71 234 567"
+                  value={whatsappNumber}
+                  onChange={e => { setWhatsappNumber(e.target.value); setWhatsappDirty(true); }}
+                  maxLength={20}
+                  className="bg-muted flex-1"
+                />
+                <Button onClick={saveWhatsappNumber} disabled={!whatsappDirty} size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                  Save
+                </Button>
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <div><p className="text-sm font-medium">Email Alerts</p><p className="text-[10px] text-muted-foreground">Monthly statements & announcements</p></div>
