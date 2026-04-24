@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Lightbulb, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getTransactions, getBudgets, getUserSettings, type Insight } from "@/lib/store";
+import { saveInsight } from "@/lib/extendedStore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,12 +25,17 @@ async function fetchAIInsights(transactions: any[], budgets: any[], currency: st
   if (error) throw error;
 
   if (data?.insights) {
-    return data.insights.map((i: any) => ({
+    const mapped = data.insights.map((i: any) => ({
       id: crypto.randomUUID(),
       message: i.message,
       level: i.level || "tip",
       createdAt: new Date().toISOString(),
     }));
+    // Persist to ai_insights table (fire-and-forget)
+    mapped.forEach((m: Insight) => {
+      saveInsight({ insight_type: 'ai', message: m.message, severity: m.level, rule_id: 'gemini' }).catch(() => {});
+    });
+    return mapped;
   }
 
   return [{ id: crypto.randomUUID(), message: "💡 No insights available right now.", level: "tip" as const, createdAt: new Date().toISOString() }];
