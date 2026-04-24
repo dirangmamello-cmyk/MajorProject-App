@@ -318,6 +318,16 @@ export default function AppSettings() {
           </Select>
         </div>
 
+        {/* Manage */}
+        <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div className="flex items-center gap-2 mb-3"><Globe className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">Manage</h2></div>
+          <div className="space-y-2">
+            <button onClick={() => navigate('/accounts')} className="w-full text-left px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 text-sm">🏦 My Accounts</button>
+            <button onClick={() => navigate('/categories')} className="w-full text-left px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 text-sm">🏷️ Categories</button>
+            <button onClick={() => navigate('/admin')} className="w-full text-left px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 text-sm">🛡️ Admin Dashboard</button>
+          </div>
+        </div>
+
         {/* About */}
         <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-2 mb-2"><Shield className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">About</h2></div>
