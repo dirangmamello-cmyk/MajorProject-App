@@ -200,6 +200,15 @@ export async function syncAll(): Promise<{ synced: number; failed: number }> {
 
   isSyncing = false;
   notifyListeners();
+
+  if (synced > 0 || failed > 0) {
+    logSync({
+      sync_status: failed === 0 ? 'success' : (synced === 0 ? 'failed' : 'partial'),
+      records_sent: synced,
+      records_received: 0,
+    }).catch(() => {});
+  }
+
   return { synced, failed };
 }
 
