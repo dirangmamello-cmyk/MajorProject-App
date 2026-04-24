@@ -13,6 +13,9 @@ import Goals from "./pages/Goals";
 import AIChatbot from "./pages/AIChatbot";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Admin from "./pages/Admin";
+import Accounts from "./pages/Accounts";
+import Categories from "./pages/Categories";
 import BottomNav from "./components/BottomNav";
 
 const queryClient = new QueryClient();
@@ -45,6 +48,9 @@ function AppRoutes() {
         <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><AIChatbot /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><AppSettings /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+        <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />
+        <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <BottomNav />}
