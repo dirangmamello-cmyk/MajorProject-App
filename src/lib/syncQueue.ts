@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logSync } from "@/lib/extendedStore";
 
 // ─── Types ───────────────────────────────────────────────────
 export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'failed';
