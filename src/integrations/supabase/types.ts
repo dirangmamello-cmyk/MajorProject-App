@@ -14,35 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_name: string
+          account_number: string | null
+          created_at: string
+          id: string
+          last_balance: number
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          account_number?: string | null
+          created_at?: string
+          id?: string
+          last_balance?: number
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string | null
+          created_at?: string
+          id?: string
+          last_balance?: number
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_insights: {
+        Row: {
+          created_at: string
+          id: string
+          insight_type: string
+          message: string
+          rule_id: string | null
+          severity: string
+          tx_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insight_type: string
+          message: string
+          rule_id?: string | null
+          severity?: string
+          tx_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insight_type?: string
+          message?: string
+          rule_id?: string | null
+          severity?: string
+          tx_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_tx_id_fkey"
+            columns: ["tx_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           category: string
+          category_id: string | null
           created_at: string
           end_date: string
           id: string
           limit_amount: number
+          period_type: string | null
           start_date: string
+          used_amount: number
           user_id: string
         }
         Insert: {
           category: string
+          category_id?: string | null
           created_at?: string
           end_date: string
           id?: string
           limit_amount: number
+          period_type?: string | null
           start_date: string
+          used_amount?: number
           user_id: string
         }
         Update: {
           category?: string
+          category_id?: string | null
           created_at?: string
           end_date?: string
           id?: string
           limit_amount?: number
+          period_type?: string | null
           start_date?: string
+          used_amount?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_custom: boolean
+          name: string
+          parent_category_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_custom?: boolean
+          name: string
+          parent_category_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_custom?: boolean
+          name?: string
+          parent_category_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goal_contributions: {
         Row: {
@@ -103,11 +229,77 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          channel: string
+          content: string
+          created_at: string
+          id: string
+          sent_at: string | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          content: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sync_logs: {
+        Row: {
+          created_at: string
+          id: string
+          last_sync_at: string
+          records_received: number
+          records_sent: number
+          sync_status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_sync_at?: string
+          records_received?: number
+          records_sent?: number
+          sync_status: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_sync_at?: string
+          records_received?: number
+          records_sent?: number
+          sync_status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
+          account_id: string | null
           amount: number
           category: string
+          category_id: string | null
           created_at: string
+          currency: string | null
           date: string
           id: string
           notes: string | null
@@ -115,9 +307,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount: number
           category: string
+          category_id?: string | null
           created_at?: string
+          currency?: string | null
           date: string
           id?: string
           notes?: string | null
@@ -125,13 +320,52 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category?: string
+          category_id?: string | null
           created_at?: string
+          currency?: string | null
           date?: string
           id?: string
           notes?: string | null
           type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -174,10 +408,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -304,6 +544,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
