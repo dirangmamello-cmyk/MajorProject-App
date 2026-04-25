@@ -1,6 +1,6 @@
 // Extended store for ERD entities: accounts, categories, ai_insights, notifications, sync_logs, user_roles
 import { supabase } from "@/integrations/supabase/client";
-
+ 
 // ─── Types ───────────────────────────────────────────────────
 export interface Account {
   id: string;
@@ -11,7 +11,7 @@ export interface Account {
   last_balance: number;
   created_at: string;
 }
-
+ 
 export interface Category {
   id: string;
   user_id: string;
@@ -19,7 +19,7 @@ export interface Category {
   parent_category_id: string | null;
   is_custom: boolean;
 }
-
+ 
 export interface AIInsightRow {
   id: string;
   user_id: string;
@@ -30,7 +30,7 @@ export interface AIInsightRow {
   rule_id: string | null;
   created_at: string;
 }
-
+ 
 export interface Notification {
   id: string;
   user_id: string;
@@ -41,7 +41,7 @@ export interface Notification {
   sent_at: string | null;
   created_at: string;
 }
-
+ 
 export interface SyncLog {
   id: string;
   user_id: string;
@@ -51,33 +51,33 @@ export interface SyncLog {
   records_received: number;
   created_at: string;
 }
-
+ 
 // ─── Accounts ────────────────────────────────────────────────
 export async function getAccounts(): Promise<Account[]> {
   const { data, error } = await supabase.from('accounts').select('*').order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []) as Account[];
 }
-
+ 
 export async function addAccount(a: Omit<Account, 'id' | 'user_id' | 'created_at'>) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
   const { error } = await supabase.from('accounts').insert({ ...a, user_id: user.id });
   if (error) throw error;
 }
-
+ 
 export async function deleteAccount(id: string) {
   const { error } = await supabase.from('accounts').delete().eq('id', id);
   if (error) throw error;
 }
-
+ 
 // ─── Categories ──────────────────────────────────────────────
 export async function getCategories(): Promise<Category[]> {
   const { data, error } = await supabase.from('categories').select('*').order('name');
   if (error) throw error;
   return (data || []) as Category[];
 }
-
+ 
 export async function addCategory(c: { name: string; parent_category_id?: string | null }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -89,39 +89,49 @@ export async function addCategory(c: { name: string; parent_category_id?: string
   });
   if (error) throw error;
 }
-
+ 
 export async function deleteCategory(id: string) {
   const { error } = await supabase.from('categories').delete().eq('id', id);
   if (error) throw error;
 }
-
+ 
 // ─── AI Insights (persisted) ─────────────────────────────────
 export async function getInsightHistory(): Promise<AIInsightRow[]> {
   const { data, error } = await supabase.from('ai_insights').select('*').order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
   return (data || []) as AIInsightRow[];
 }
-
+ 
 export async function saveInsight(i: { insight_type: string; message: string; severity: string; rule_id?: string; tx_id?: string }) {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.from('ai_insights').insert({
+  if (!user) {
+    console.error("[saveInsight] No user found — not authenticated");
+    return;
+  }
+  const payload = {
     user_id: user.id,
     insight_type: i.insight_type,
     message: i.message,
     severity: i.severity,
     rule_id: i.rule_id || null,
     tx_id: i.tx_id || null,
-  });
+  };
+  console.log("[saveInsight] Inserting:", payload);
+  const { data, error } = await supabase.from('ai_insights').insert(payload);
+  if (error) {
+    console.error("[saveInsight] Supabase error:", error);
+  } else {
+    console.log("[saveInsight] Success:", data);
+  }
 }
-
+ 
 // ─── Notifications ───────────────────────────────────────────
 export async function getNotifications(): Promise<Notification[]> {
   const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
   return (data || []) as Notification[];
 }
-
+ 
 export async function logNotification(n: { type: string; channel: Notification['channel']; content: string; status?: Notification['status'] }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
@@ -133,14 +143,14 @@ export async function logNotification(n: { type: string; channel: Notification['
     status: n.status || 'pending',
   });
 }
-
+ 
 // ─── Sync Logs ───────────────────────────────────────────────
 export async function getSyncLogs(): Promise<SyncLog[]> {
   const { data, error } = await supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
   return (data || []) as SyncLog[];
 }
-
+ 
 export async function logSync(s: { sync_status: string; records_sent: number; records_received: number }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
@@ -151,7 +161,7 @@ export async function logSync(s: { sync_status: string; records_sent: number; re
     records_received: s.records_received,
   });
 }
-
+ 
 // ─── Roles / Admin ───────────────────────────────────────────
 export async function isCurrentUserAdmin(): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -165,20 +175,20 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
   if (error) return false;
   return !!data;
 }
-
+ 
 // Admin-only queries (RLS will block non-admins)
 export async function adminGetAllTransactions() {
   const { data, error } = await supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(200);
   if (error) throw error;
   return data || [];
 }
-
+ 
 export async function adminGetAllNotifications() {
   const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(200);
   if (error) throw error;
   return data || [];
 }
-
+ 
 export async function adminGetAllSyncLogs() {
   const { data, error } = await supabase.from('sync_logs').select('*').order('created_at', { ascending: false }).limit(200);
   if (error) throw error;

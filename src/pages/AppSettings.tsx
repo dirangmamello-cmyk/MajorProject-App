@@ -88,6 +88,7 @@ export default function AppSettings() {
     },
     onError: () => toast.error("Failed to delete budget"),
   });
+
   const handleCurrency = async (val: string) => {
     try {
       await updateUserSettings({ currency: val });
@@ -268,7 +269,7 @@ export default function AppSettings() {
           )}
         </div>
 
-
+        {/* ─── Alerts & Notifications ─── */}
         <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-2 mb-4"><Bell className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">Alerts & Notifications</h2></div>
           <div className="space-y-4">
@@ -301,7 +302,7 @@ export default function AppSettings() {
           </div>
         </div>
 
-        {/* Currency */}
+        {/* ─── Currency ─── */}
         <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-2 mb-4"><Globe className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">Currency Preferences</h2></div>
           <Select value={settings?.currency || 'USD'} onValueChange={handleCurrency}>
@@ -318,17 +319,16 @@ export default function AppSettings() {
           </Select>
         </div>
 
-        {/* Manage */}
+        {/* ─── Manage ─── */}
         <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-2 mb-3"><Globe className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">Manage</h2></div>
           <div className="space-y-2">
-            <button onClick={() => navigate('/accounts')} className="w-full text-left px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 text-sm">🏦 My Accounts</button>
             <button onClick={() => navigate('/categories')} className="w-full text-left px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 text-sm">🏷️ Categories</button>
             <button onClick={() => navigate('/admin')} className="w-full text-left px-3 py-2 rounded-lg bg-muted hover:bg-muted/70 text-sm">🛡️ Admin Dashboard</button>
           </div>
         </div>
 
-        {/* About */}
+        {/* ─── About ─── */}
         <div className="bg-card rounded-2xl p-4 border border-border mb-4" style={{ boxShadow: 'var(--shadow-card)' }}>
           <div className="flex items-center gap-2 mb-2"><Shield className="w-4 h-4 text-secondary" /><h2 className="text-sm font-heading font-semibold">About</h2></div>
           <p className="text-xs text-muted-foreground">ArkFinance v1.0 — Budget Tracking with AI Insights</p>
